@@ -38,10 +38,13 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
             #cv2.putText(image, 'HSV:'+f"{hsv.mean():.3f}", (cx-20, cy-20), cv2.FONT_HERSHEY_DUPLEX, 1, (255,0,0), 3)
             cv2.putText(image, 'HSV:'+f"{hsv.mean():.3f}", (cx-20, cy-20), cv2.FONT_HERSHEY_DUPLEX, 1, (255,0,0), 3)
     
-    cv2.imshow("frame", image)
-    cv2.imshow("Global Thresholding", th1)
-    cv2.imshow("Otsu binary", th2)
+    #cv2.imshow("frame", image)
+    #cv2.imshow("Global Thresholding", th1)
+    #cv2.imshow("Otsu binary", th2)
     
+    plt.imshow(image)
+    plt.colorbar()
+    plt.show()
     key = cv2.waitKey(1)
     rawCapture.truncate(0)
     if key == 27:
