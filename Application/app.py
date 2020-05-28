@@ -1,5 +1,7 @@
-from flask import Flask, render_template, Response
+from flask import Flask, jsonify, render_template, Response
 from camera import CameraHandler
+from sensors import DataHandler
+
 app = Flask(__name__)
 
 
@@ -23,11 +25,11 @@ def video_feed():
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
-@app.route('/sensor_data')
+@app.route('/sensor_data', methods=['GET'])
 def sensor_data():
-    data = 'foo'
-    return Response(data,
-                    mimetype='text/xml')
+    data = DataHandler().get_data()
+    _, _, fsr1, fsr2, fsr3, fsl1, fsl2, fsl3 = data.split(',')
+    return jsonify(fsr1, fsr2, fsr3, fsl1, fsl2, fsl3)
 
 
 if __name__ == '__main__':

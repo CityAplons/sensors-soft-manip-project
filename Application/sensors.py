@@ -1,14 +1,18 @@
-import websockets
+from websocket import create_connection
 
-class CameraHandler(object):
+
+class DataHandler(object):
     def __init__(self):
-        # creating websocket instance
-        self.url = "ws://192.168.1.75/ws"
+        self.url = "ws://192.168.1.76/ws"
+        self.ws = create_connection(self.url)
 
     def __del__(self):
-        # releasing camera
-        self.camera.close()
+        self.ws.close()
 
     def get_data(self):
-        xml = "test"
+        try:
+            xml = self.ws.recv()
+        except:
+            xml = "0,0,0,0,0,0,0,0"
         return xml
+
