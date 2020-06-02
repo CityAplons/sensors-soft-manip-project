@@ -4,8 +4,24 @@
     <meta charset="UTF-8">
     <title>Soft gripper redundancy system</title>
     <style>
-        table, th, td {
-          border: 1px solid black;
+        table {
+          border: 1px solid #ddd;
+          padding: 8px;
+        }
+        table tr:nth-child(even){background-color: #f2f2f2;}
+
+        table tr:hover {background-color: #ddd;}
+
+        table th {
+          padding-top: 12px;
+          padding-bottom: 12px;
+          text-align: center;
+          background-color: rgb(65, 134, 67);
+          color: white;
+        }
+
+        #result {
+          width: 100%;
         }
 
         .container {
@@ -16,12 +32,20 @@
     </style>
 </head>
 <body onload="update_values()">
+    <div id="result">{{ url_for('true_value') }}</div>
     <div class="container">
         <h2>Camera data</h2>
         <img id="bg" src="{{ url_for('video_feed') }}">
     </div>
     <div class="container">
         <h2>Sensor data</h2>
+        <div id="error" style="display: none;">
+          <span style="color: crimson;">Connection error!</span>
+          <form id="ip">
+            <input type="text" name="ip" id="adress">
+            <input type="submit" value="Change ESP32 IP adress">
+          </form>
+        </div>
         <table style="width:800px;">
           <tr>
             <th colspan="3">FR</th>
@@ -47,6 +71,7 @@
         let c = 0;
         let handleTemp = [0,0,0,0,0,0];
         let timeArray = [0];
+        let isPaused = false;
 
         let data = {
           labels: timeArray,
@@ -105,40 +130,74 @@
         let chart = new Chart(ctx, config);
 
         function update_values() {
-          $.get("/sensor_data",
-              (data) => {
-                handleTemp[0] = data[0];
-                handleTemp[1] = data[1];
-                handleTemp[2] = data[2];
-                handleTemp[3] = data[3];
-                handleTemp[4] = data[4];
-                handleTemp[5] = data[5];
-                $('#fr1').text(handleTemp[0])
-                $('#fr2').text(handleTemp[1])
-                $('#fr3').text(handleTemp[2])
-                $('#fl1').text(handleTemp[3])
-                $('#fl2').text(handleTemp[4])
-                $('#fl3').text(handleTemp[5])
-          });
+          if(!isPaused) {
+            $.get("/sensor_data",
+                (data) => {
+                  if(data[0] === "!") {
+                    isPaused = true;
+                    $('#error').show();
+                    $("table").hide();
+                    $(".chart").hide();
+                  } 
+                  handleTemp[0] = data[0];
+                  handleTemp[1] = data[1];
+                  handleTemp[2] = data[2];
+                  handleTemp[3] = data[3];
+                  handleTemp[4] = data[4];
+                  handleTemp[5] = data[5];
+                  $('#fr1').text(handleTemp[0])
+                  $('#fr2').text(handleTemp[1])
+                  $('#fr3').text(handleTemp[2])
+                  $('#fl1').text(handleTemp[3])
+                  $('#fl2').text(handleTemp[4])
+                  $('#fl3').text(handleTemp[5])
+            });
 
-          c += 1;
-          timeArray.push(c);
-          //console.log(c);
-          //console.log(handleTemp);
+            c += 1;
+            timeArray.push(c);
+            //console.log(c);
+            //console.log(handleTemp);
 
-          let i = 0;
-          chart.data.datasets.forEach((dataset) => {
-              dataset.data.push(handleTemp[i]);
-              i += 1;
-          });
-          if (c > 30) {
-            chart.data.labels.pop();
+            let i = 0;
             chart.data.datasets.forEach((dataset) => {
-                dataset.data.shift();
+                dataset.data.push(handleTemp[i]);
+                i += 1;
+            });
+            if (c > 30) {
+              chart.data.labels.pop();
+              chart.data.datasets.forEach((dataset) => {
+                  dataset.data.shift();
+              });
+            }
+            chart.update();
+          } else {
+            $.get("/sensor_data", (data) => {
+              if (data[0] !== "!" && isPaused) {
+                isPaused = false;
+                $("table").show();
+                $(".chart").show();
+                $('#error').hide();
+                $('#ip input[type="submit"]').prop("disabled", false);
+              }
             });
           }
-          chart.update();
+          
         }
+
+        $('#ip').submit((event) => {
+          event.preventDefault();
+          const newIP = $('#adress').val();
+          const regexp = RegExp('^((25[0-5]|(2[0-4]|1[0-9]|[1-9]|)[0-9])(\.(?!$)|$)){4}$')
+          if (regexp.test(newIP)) {
+            $('#ip input[type="submit"]').prop("disabled", true);
+            $.post("/set_new_ip", {ip:newIP}).done((data) => {
+              if (data === "OK") location.reload();
+            });
+          }
+          else {
+            $('#error span').text("IP adress pattern mismatch. Try again!")
+          }
+        });
     </script>
 </body>
 </html>
