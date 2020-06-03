@@ -35,11 +35,11 @@ def true_value():
     global cameraObject
 
     ### Антон, пиши тут %)
-    cameraValues = cameraObject.getValues()     # Mean HSV value (float)
+    cameraValue = cameraObject.getValues()     # Mean HUE value (float)
     sensorsValues = sensorsObject.get_data()    # String of 8 values splitted by comma (,)
-    # fsr, fsl, hue = sensorsValues.split(',')
+    fsr, fsl, hue = sensorsValues.split(',')
 
-    return "0.0"
+    return "HUE. Camera: " + cameraValue + ", Sensor: " + hue
 
 
 @app.route('/sensor_data', methods=['GET'])
