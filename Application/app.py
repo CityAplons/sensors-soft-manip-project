@@ -27,7 +27,7 @@ def video_feed():
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
-@app.route('/true_value')
+@app.route('/true_value', methods=['GET'])
 def true_value():
     ### Антон, пиши тут %)
     cameraValue = CameraHandler().getValues()     # Mean HUE value (float)
@@ -41,10 +41,11 @@ def true_value():
 def sensor_data():
     global sensorsObject
     data = sensorsObject.get_data()
+    cameraValue = CameraHandler().getValues()
     # print(data)
     if data[0] != "!":
         fsr, fsl, hue = data.split(',')
-        return jsonify(fsr, fsl, hue)
+        return jsonify(fsr, fsl, hue, cameraValue)
     else:
         return "!Connection error"
 
