@@ -37,7 +37,7 @@ def true_value():
     ### Антон, пиши тут %)
     cameraValues = cameraObject.getValues()     # Mean HSV value (float)
     sensorsValues = sensorsObject.get_data()    # String of 8 values splitted by comma (,)
-    # _, _, fsr1, fsr2, fsr3, fsl1, fsl2, fsl3 = sensorsValues.split(',')
+    # fsr, fsl, hue = sensorsValues.split(',')
 
     return "0.0"
 
@@ -48,8 +48,8 @@ def sensor_data():
     data = sensorsObject.get_data()
     # print(data)
     if data[0] != "!":
-        _, _, fsr1, fsr2, fsr3, fsl1, fsl2, fsl3 = data.split(',')
-        return jsonify(fsr1, fsr2, fsr3, fsl1, fsl2, fsl3)
+        fsr, fsl, hue = data.split(',')
+        return jsonify(fsr, fsl, hue)
     else:
         return "!Connection error"
 

@@ -9,6 +9,11 @@
 // Library for LED
 #include <FastLED.h>
 
+// Websockets libraries
+#include <WiFi.h>
+#include <ESPAsyncWebServer.h>
+#include <WebSocketsServer.h>
+
 #define NUM_LEDS 6        // Number of LED in the stripe
 #define PIN_FSR_1 34      
 #define PIN_FSL_1 35
@@ -39,6 +44,43 @@ int FSR_max;
 int FSL_avg;
 int hue;
 int F;
+
+const char *ssid = "MGTS_GPON_8E38";
+const char *password =  "NxpNRAXG";
+// WebSocket globals
+AsyncWebServer server(80);
+AsyncWebSocket ws("/ws");
+AsyncEventSource events("/events");
+
+// Callback: receiving any WebSocket message
+void onWebSocketEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *payload, size_t len) {
+
+  // Figure out the type of WebSocket event
+  switch(type) {
+
+    // Client has disconnected
+    case WStype_DISCONNECTED:
+      Serial.printf("[%u] Disconnected!\n", client->id());
+      break;
+
+    // New client has connected
+    case WStype_CONNECTED:
+      {
+        Serial.printf("[%u] Connection from ", client->id());
+      }
+      break;
+    // For everything else: do nothing
+    case WStype_TEXT:
+    case WStype_BIN:
+    case WStype_ERROR:
+    case WStype_FRAGMENT_TEXT_START:
+    case WStype_FRAGMENT_BIN_START:
+    case WStype_FRAGMENT:
+    case WStype_FRAGMENT_FIN:
+    default:
+      break;
+  }
+}
 
 void setup() {
   // initialize serial communication at 9600 bits per second:
@@ -79,6 +121,32 @@ void setup() {
     writeFile(SD, filename, "ReadingID, time, fsr1, fsr2, fsr3, fsl1, fsl2, fsl3, fsr_max, fsl_avg, hue, force \r\n");
   }
   file.close();
+
+  // Setting up WiFi server
+  WiFi.begin(ssid, password);
+  Serial.print("Connecting to ");
+  Serial.print(ssid); Serial.println(" ...");
+  while (WiFi.status() != WL_CONNECTED) { // Wait for the Wi-Fi to connect
+    delay(1000);
+    Serial.print('.');
+  }
+  Serial.println('\n');
+  Serial.println("Connection established!");  
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.localIP());
+
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+      request->send(200, "text/plain", "Welcome. WebSocket server located on route /ws");
+  });
+
+  server.onNotFound([](AsyncWebServerRequest *request){
+    request->send(404, "text/plain", "Not found");  
+  });
+    
+  ws.onEvent(onWebSocketEvent);
+  server.addHandler(&ws);
+
+  server.begin();
 }
 int max3(int a, int b, int c)
 {
@@ -156,6 +224,12 @@ void loop() {
 
   //logSDCard();
   readingID++;
+
+  //Sending information for all websocket users
+  ws.textAll(String(FSR_max) + "," + String(FSL_avg)+ "," + String(hue));
+  
+  // Refreshing user list (connect/disconnect)
+  ws.cleanupClients();
 }
 
 // Write the sensor readings on the SD card
