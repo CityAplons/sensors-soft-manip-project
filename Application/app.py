@@ -2,8 +2,7 @@ from flask import Flask, jsonify, render_template, request, Response
 from camera import CameraHandler
 from sensors import DataHandler
 
-cameraObject = CameraHandler()
-sensorsObject = DataHandler("192.168.1.67")
+sensorsObject = DataHandler("192.168.1.11")
 
 app = Flask(__name__)
 
@@ -24,18 +23,14 @@ def gen(camera):
 
 @app.route('/video_feed')
 def video_feed():
-    global cameraObject
-    return Response(gen(cameraObject),
+    return Response(gen(CameraHandler()),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 @app.route('/true_value')
 def true_value():
-    global sensorsObject
-    global cameraObject
-
     ### Антон, пиши тут %)
-    cameraValue = cameraObject.getValues()     # Mean HUE value (float)
+    cameraValue = CameraHandler().getValues()     # Mean HUE value (float)
     sensorsValues = sensorsObject.get_data()    # String of 8 values splitted by comma (,)
     fsr, fsl, hue = sensorsValues.split(',')
 

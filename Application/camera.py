@@ -1,4 +1,7 @@
 import cv2
+import time
+import io
+import threading
 from picamera.array import PiRGBArray
 from picamera import PiCamera
 from picamera import Color
@@ -40,29 +43,28 @@ class MatchColor:
         return self.x
 
 class CameraHandler(object):
-    def __init__(self):
-        # creating camera instance
-        self.camera = PiCamera()
-        self.camera.resolution = (640, 480)
-        self.camera.framerate = 30
-        self.camera.iso = 80
-        self.camera.sensor_mode = 1
-        self.camera.awb_gains = 2
-        self.rawCapture = PiRGBArray(self.camera, size=(640, 480))
-        self.meanHSV = 0.0
-        self.myInt = boundedInt(20, 152)
-        self.mpClr = MatchColor(20, 152, 210, 45)
+    thread = None  # background thread that reads frames from camera
+    frame = None  # current frame is stored here by background thread
+    last_access = 0  # time of last client access to the camera
+    stop_camera = False
+    meanHSV = 0.0
+    myInt = boundedInt(20, 152)
+    mpClr = MatchColor(20, 152, 210, 45)
 
-    def __del__(self):
-        # releasing camera
-        self.camera.close()
+    def initialize(self):
+        if CameraHandler.thread is None:
+            # start background frame thread
+            CameraHandler.thread = threading.Thread(target=self._thread)
+            CameraHandler.thread.start()
+            # wait until frames start to be available
+            while self.frame is None:
+                time.sleep(0)
 
     def get_frame(self):
-
-
-        # extracting frames
-        frame = self.camera.capture(self.rawCapture, format="bgr", use_video_port=True)
-        image = frame.array
+        CameraHandler.last_access = time.time()
+        self.initialize()
+        buffer = PiRGBArray(self.frame, size=(640, 480))
+        image = buffer.array
         img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
         # global thresholding
@@ -96,3 +98,39 @@ class CameraHandler(object):
 
     def getValues(self):
         return self.meanHSV
+
+    def StopPreview(self):
+        CameraHandler.stop_camera = True
+
+    @classmethod
+    def _thread(cls):
+        with PiCamera() as camera:
+            # camera setup
+            camera.resolution = (640, 480)
+            camera.framerate = 30
+            camera.iso = 80
+            camera.sensor_mode = 1
+            camera.awb_gains = 2
+
+            # let camera warm up
+            camera.start_preview()
+            time.sleep(2)
+
+            stream = io.BytesIO()
+            for foo in camera.capture_continuous(stream, 'jpeg',
+                                                 use_video_port=True):
+                # store frame
+                stream.seek(0)
+                cls.frame = stream.read()
+
+                # reset stream for next frame
+                stream.seek(0)
+                stream.truncate()
+
+                # if there hasn't been any clients asking for frames in
+                # the last 10 seconds stop the thread
+                if time.time() - cls.last_access > 10:
+                    break
+                elif CameraHandler.stop_camera is True:
+                    break
+        cls.thread = None
