@@ -22,24 +22,23 @@ class EchoWebsocket:
 
 
 class DataHandler:
-    data = None
-
     def __init__(self, ip):
         self.wws = EchoWebsocket(ip)
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
-        self.loop.create_task(self.get_current_data())
-        self.loop.run_forever()
 
     def __del__(self):
         self.loop.close()
 
     def get_data(self):
-        return self.data
+        if not self.loop.is_running():
+            return self.loop.run_until_complete(self.get_current_data())
+        else:
+            return "!Connecting"
 
     async def get_current_data(self):
         try:
             async with self.wws as echo:
-                self.data = await echo.receive()
+                return await echo.receive()
         except Exception:
-            self.data = "!Connection error"
+            return "!Connection error"

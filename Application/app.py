@@ -3,6 +3,7 @@ from camera import CameraHandler
 from sensors import DataHandler
 
 sensorsObject = DataHandler("192.168.1.11")
+sensorData = "!No data"
 
 app = Flask(__name__)
 
@@ -29,18 +30,27 @@ def video_feed():
 
 @app.route('/true_value', methods=['GET'])
 def true_value():
-    ### Антон, пиши тут %)
     cameraValue = CameraHandler().getValues()     # Mean HUE value (float)
-    sensorsValues = sensorsObject.get_data()    # String of 8 values splitted by comma (,)
-    fsr, fsl, hue = sensorsValues.split(',')
-
-    return "HUE. Camera: " + cameraValue + ", Sensor: " + hue
+    global sensorData
+    if sensorData[0] != "!":
+        fsr, fsl, hue = sensorData.split(',')
+        if cameraValue > 0:
+            return "Camera: " + str(cameraValue) + ", Sensor: " + hue
+        else:
+            return "Camera: no data, Sensor: " + hue
+    else:
+        if cameraValue > 0:
+            return "Camera: " + str(cameraValue) + ", Sensor: no data"
+        else:
+            return "Camera: no data, Sensor: no data"
 
 
 @app.route('/sensor_data', methods=['GET'])
 def sensor_data():
     global sensorsObject
+    global sensorData
     data = sensorsObject.get_data()
+    sensorData = data
     cameraValue = CameraHandler().getValues()
     # print(data)
     if data[0] != "!":

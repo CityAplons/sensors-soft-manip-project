@@ -1,6 +1,5 @@
 import cv2
 import time
-import io
 import threading
 from picamera.array import PiRGBArray
 from picamera import PiCamera
@@ -98,9 +97,6 @@ class CameraHandler(object):
 
     def getValues(self):
         return self.meanHSV
-
-    def StopPreview(self):
-        CameraHandler.stop_camera = True
 
     @classmethod
     def _thread(cls):
