@@ -48,8 +48,8 @@ class CameraHandler(object):
     last_access = 0  # time of last client access to the camera
     stop_camera = False
     meanHSV = 0.0
-    myInt = boundedInt(20, 152)
-    mpClr = MatchColor(20, 152, 210, 45)
+    bdClr = boundedInt(32,152)
+    mpClr = MatchColor(32, 152, 45, 210)
 
     def initialize(self):
         if CameraHandler.thread is None:
@@ -63,7 +63,7 @@ class CameraHandler(object):
     def get_frame(self):
         CameraHandler.last_access = time.time()
         self.initialize()
-        buffer = PiRGBArray(self.frame, size=(640, 480))
+        buffer = self.frame
         image = buffer.array
         img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
@@ -75,7 +75,7 @@ class CameraHandler(object):
 
         contours, hierarchy = cv2.findContours(th2, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         mean_val = cv2.mean(hsv, mask=th2)
-        hue_cam = self.myInt.assign(round(mean_val[0]))
+        hue_cam = self.bdClr.assign(round(mean_val[0]))
         hue_snr = self.mpClr.mapColour(hue_cam)
         self.meanHSV = hue_snr
         cv2.putText(image, 'Hue:' + f"{hue_snr}", (200, 200), cv2.FONT_HERSHEY_DUPLEX, 1, (255, 0, 0), 3)
@@ -116,12 +116,12 @@ class CameraHandler(object):
             camera.start_preview()
             time.sleep(2)
 
-            stream = io.BytesIO()
-            for foo in camera.capture_continuous(stream, 'jpeg',
+            stream = PiRGBArray(camera, size=(640, 480))
+            for foo in camera.capture_continuous(stream, 'bgr',
                                                  use_video_port=True):
                 # store frame
                 stream.seek(0)
-                cls.frame = stream.read()
+                cls.frame = foo
 
                 # reset stream for next frame
                 stream.seek(0)
