@@ -1,6 +1,9 @@
-from flask import Flask, jsonify, render_template, Response
+from flask import Flask, jsonify, render_template, request, Response
 from camera import CameraHandler
 from sensors import DataHandler
+
+cameraObject = CameraHandler()
+sensorsObject = DataHandler("192.168.1.67")
 
 app = Flask(__name__)
 
@@ -21,15 +24,42 @@ def gen(camera):
 
 @app.route('/video_feed')
 def video_feed():
-    return Response(gen(CameraHandler()),
+    global cameraObject
+    return Response(gen(cameraObject),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
+@app.route('/true_value')
+def true_value():
+    global sensorsObject
+    global cameraObject
+
+    ### Антон, пиши тут %)
+    cameraValues = cameraObject.getValues()     # Mean HSV value (float)
+    sensorsValues = sensorsObject.get_data()    # String of 8 values splitted by comma (,)
+    # _, _, fsr1, fsr2, fsr3, fsl1, fsl2, fsl3 = sensorsValues.split(',')
+
+    return "0.0"
 
 
 @app.route('/sensor_data', methods=['GET'])
 def sensor_data():
-    data = DataHandler().get_data()
-    _, _, fsr1, fsr2, fsr3, fsl1, fsl2, fsl3 = data.split(',')
-    return jsonify(fsr1, fsr2, fsr3, fsl1, fsl2, fsl3)
+    global sensorsObject
+    data = sensorsObject.get_data()
+    # print(data)
+    if data[0] != "!":
+        _, _, fsr1, fsr2, fsr3, fsl1, fsl2, fsl3 = data.split(',')
+        return jsonify(fsr1, fsr2, fsr3, fsl1, fsl2, fsl3)
+    else:
+        return "!Connection error"
+
+
+@app.route('/set_new_ip', methods=['POST'])
+def set_new_ip():
+    global sensorsObject
+    ip = request.form.get('ip')
+    sensorsObject = DataHandler(ip)
+    return "OK"
 
 
 if __name__ == '__main__':

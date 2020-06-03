@@ -10,6 +10,7 @@ class CameraHandler(object):
         self.camera.resolution = (640, 480)
         self.camera.framerate = 30
         self.rawCapture = PiRGBArray(self.camera, size=(640, 480))
+        self.meanHSV = 0.0
 
     def __del__(self):
         # releasing camera
@@ -40,7 +41,11 @@ class CameraHandler(object):
                 # cv2.putText(image, 'HSV:'+f"{hsv.mean():.3f}", (cx-20, cy-20), cv2.FONT_HERSHEY_DUPLEX, 1, (255,0,0), 3)
                 cv2.putText(image, 'HSV:' + f"{hsv.mean():.3f}", (cx - 20, cy - 20), cv2.FONT_HERSHEY_DUPLEX, 1,
                             (255, 0, 0), 3)
+                self.meanHSV = hsv.mean()
 
         # encode OpenCV raw frame to jpg and displaying it
         ret, jpeg = cv2.imencode('.jpg', image)
         return jpeg.tobytes()
+
+    def getValues(self):
+        return self.meanHSV
