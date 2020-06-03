@@ -28,8 +28,11 @@ class DataHandler:
         self.wws = EchoWebsocket(ip)
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
+        self.loop.create_task(self.get_current_data())
+        self.loop.run_forever()
 
-        self.loop.run_forever(self.get_current_data())
+    def __del__(self):
+        self.loop.close()
 
     def get_data(self):
         return self.data
@@ -39,4 +42,4 @@ class DataHandler:
             async with self.wws as echo:
                 self.data = await echo.receive()
         except Exception:
-            return "!Connection error"
+            self.data = "!Connection error"
