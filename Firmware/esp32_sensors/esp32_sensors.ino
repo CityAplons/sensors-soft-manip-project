@@ -22,14 +22,14 @@
 #define PIN_FSL_3 12
 #define PIN_LED_FIRST 26
 #define PIN_LED_SECOND 27
-#define PIN_LED_THIRD 25
+//#define PIN_LED_THIRD 25
 #define SD_CS     5        // Define CS pin for the SD card module
 
 CRGB leds_1[NUM_LEDS];
 CRGB leds_2[NUM_LEDS];
 CRGB leds_3[NUM_LEDS];
 String dataMessage;
-char* filename = "/data2.txt";
+char* filename = "/data5.txt";
 unsigned long int readingID = 0;
 unsigned long int _time;  // Seconds
 byte counter;
@@ -40,8 +40,8 @@ int FSR_1_reading;
 int FSR_2_reading;
 int FSR_3_reading;
 
-const char *ssid = "Your WiFi router SSID";
-const char *password =  "WiFi password";
+const char *ssid = "MGTS_GPON_8E38";
+const char *password =  "NxpNRAXG";
 // WebSocket globals
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
@@ -81,7 +81,7 @@ void setup() {
   // initialize serial communication at 9600 bits per second:
   FastLED.addLeds<WS2811, PIN_LED_FIRST, GRB>(leds_1, NUM_LEDS).setCorrection( TypicalLEDStrip );
   FastLED.addLeds<WS2811, PIN_LED_SECOND, GRB>(leds_2, NUM_LEDS).setCorrection( TypicalLEDStrip );
-  FastLED.addLeds<WS2811, PIN_LED_THIRD, GRB>(leds_3, NUM_LEDS).setCorrection( TypicalLEDStrip );
+//  FastLED.addLeds<WS2811, PIN_LED_THIRD, GRB>(leds_3, NUM_LEDS).setCorrection( TypicalLEDStrip );
   FastLED.setBrightness(100);
   Serial.begin(9600);
   
@@ -107,7 +107,7 @@ void setup() {
   if(!file) {
     Serial.println("File doens't exist");
     Serial.println("Creating file...");
-    writeFile(SD, filename, "ReadingID, time, fsr1, fsr2, fsr3, fsl1, fsl2, fsl3 \r\n");
+    //writeFile(SD, filename, "ReadingID, time, fsr1, fsr2, fsr3, fsl1, fsl2, fsl3 \r\n");
   }
   else {
     Serial.println("File already exists");  
@@ -159,16 +159,16 @@ void loop() {
   FSR_2_reading = analogRead(PIN_FSR_2);
   FSL_3_reading = analogRead(PIN_FSL_3);
   FSR_3_reading = analogRead(PIN_FSR_3);
-  int FSR_max = max3(FSR_1_reading, FSR_2_reading, FSR_3_reading);
+  int FSR_max = max3(FSR_1_reading, FSR_2_reading, 0);
   //int FSR_avg = int((FSL_1_reading + FSL_2_reading + FSL_3_reading)/3);
   // setting up color of each actuator
-  int hue = map(FSR_max, 0, 1500, 165, 255);
+  int hue = map(FSR_max, 0, 2200, 165, 255);
 
   
   for (int i = 0; i < NUM_LEDS; i++ ) {         // от 0 до первой трети
     leds_1[i] = CHSV(hue, 255, 255);  // HSV. Увеличивать HUE (цвет)
     leds_2[i] = CHSV(hue, 255, 255);
-    leds_3[i] = CHSV(hue, 255, 255);
+//    leds_3[i] = CHSV(hue, 255, 255);
     
     // умножение i уменьшает шаг радуги
   }
@@ -189,13 +189,16 @@ void loop() {
   Serial.print(FSR_2_reading);
   Serial.print("\t");
   Serial.print("Flex 2: ");
-  Serial.print(FSL_1_reading);
+  Serial.print(FSL_2_reading);
   Serial.print("\t");
   Serial.print("Force 3: ");
   Serial.print(FSR_3_reading);
   Serial.print("\t");
   Serial.print("Flex 3: ");
   Serial.print(FSL_3_reading);
+  Serial.print("\t");
+  Serial.print("Hue: ");
+  Serial.print(hue);
   logSDCard();
   readingID++;
 
