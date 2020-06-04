@@ -17,18 +17,17 @@ def index():
 
 def gen(camera):
     while True:
+        global cameraData
         # get camera frame
         frame = camera.get_frame()
+        cameraData = camera.getValues()
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
 
 
 @app.route('/video_feed')
 def video_feed():
-    global cameraData
-    cameraInstance = CameraHandler()
-    cameraData = cameraInstance.getValues()
-    return Response(gen(cameraInstance),
+    return Response(gen(CameraHandler()),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
