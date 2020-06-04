@@ -4,6 +4,7 @@ from sensors import DataHandler
 
 sensorsObject = DataHandler("192.168.1.11")
 sensorData = "!No data"
+cameraData = 0
 
 app = Flask(__name__)
 
@@ -24,23 +25,26 @@ def gen(camera):
 
 @app.route('/video_feed')
 def video_feed():
-    return Response(gen(CameraHandler()),
+    global cameraData
+    cameraInstance = CameraHandler()
+    cameraData = cameraInstance.getValues()
+    return Response(gen(cameraInstance),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 @app.route('/true_value', methods=['GET'])
 def true_value():
-    cameraValue = CameraHandler().getValues()     # Mean HUE value (float)
+    global cameraData
     global sensorData
     if sensorData[0] != "!":
         fsr, fsl, hue = sensorData.split(',')
-        if cameraValue > 0:
-            return "Camera: " + str(cameraValue) + ", Sensor: " + hue
+        if cameraData > 0:
+            return "Camera: " + str(cameraData) + ", Sensor: " + hue
         else:
             return "Camera: no data, Sensor: " + hue
     else:
-        if cameraValue > 0:
-            return "Camera: " + str(cameraValue) + ", Sensor: no data"
+        if cameraData > 0:
+            return "Camera: " + str(cameraData) + ", Sensor: no data"
         else:
             return "Camera: no data, Sensor: no data"
 
@@ -49,13 +53,13 @@ def true_value():
 def sensor_data():
     global sensorsObject
     global sensorData
+    global cameraData
     data = sensorsObject.get_data()
     sensorData = data
-    cameraValue = CameraHandler().getValues()
     # print(data)
     if data[0] != "!":
         fsr, fsl, hue = data.split(',')
-        return jsonify(fsr, fsl, hue, cameraValue)
+        return jsonify(fsr, fsl, hue, cameraData)
     else:
         return "!Connection error"
 
