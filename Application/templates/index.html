@@ -31,7 +31,8 @@
 
         .container {
             display: inline-block;
-            width: 800px;
+            position:relative;
+            vertical-align: bottom;
             margin: 15px;
         }
     </style>
@@ -74,7 +75,7 @@
     <script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
     <script type="text/javascript">
-        let intervalID = setInterval(update_values, 1000);
+        let intervalID = setInterval(update_values, 500);
         let c = 0;
         let handleTemp = [0,0,0,0];
         let timeArray = [0];
@@ -101,7 +102,7 @@
             label: 'HUE Sensors',
             borderWidth: 1
           }, {
-            backgroundColor: 'rgba(255, 159, 64, 0.2)',
+            backgroundColor: 'rgba(0, 206, 209, 0.2)',
             borderColor: 'rgba(255, 159, 64, 0.2)',
             data: [handleTemp[3]],
             label: 'HUE Camera',
